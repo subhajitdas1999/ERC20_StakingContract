@@ -6,9 +6,10 @@ after 4 weeks of deposit user gets 5% APR , after 6 months gets 10% APR and afte
 
 # the contracts is deployed at rinkeby network 
 
-1. staking contract 0xe8057db1b81c9247E21CD29754f6592c0B1C6235 .contract is verified [etherscan](https://rinkeby.etherscan.io/address/0xe8057db1b81c9247E21CD29754f6592c0B1C6235#code)
+1. staking contract 0xe8057db1b81c9247E21CD29754f6592c0B1C6235 .
+contract is verified . [etherscan link](https://rinkeby.etherscan.io/address/0xe8057db1b81c9247E21CD29754f6592c0B1C6235#code)
 
-2. ERC20TOken contract 0x1aB0aC78503037D16780c266EAa0C7CD89D06BB3
+2. ERC20Token contract 0x1aB0aC78503037D16780c266EAa0C7CD89D06BB3
 
 
 # To Deploy the contracts 
