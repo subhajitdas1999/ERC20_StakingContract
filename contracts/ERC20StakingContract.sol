@@ -65,7 +65,7 @@ contract ERC20StakingContract {
 
     //withdraw stake tokens
     function withdrawStake(uint _stakeId,uint _tokenAmount) public{
-        require(_stakeId > 0 && _stakeId<=stakeId,"staking is not exists");
+        require(_stakeId > 0 && _stakeId<=stakeId,"staking Id is not exists");
         uint tokenBits = tokenBitsAmount(_tokenAmount);
         Staking storage staking = stakings[_stakeId];
         require(staking.stakingOwner == msg.sender,"Only staking owner is allowed to withdraw");
@@ -93,15 +93,15 @@ contract ERC20StakingContract {
         uint stakingPeriod = block.timestamp-staking.timeOfStaking;
         uint returnPersentage;
         //if staking period is greater than 1 month and less than 6 month ROI is 5%
-        if (stakingPeriod >= 4 seconds && stakingPeriod < 24 seconds){
+        if (stakingPeriod >= 4 weeks && stakingPeriod < 24 weeks){
             returnPersentage = 5;
         }
         //if staking period is greater than 6 month and less than 1 year ROI is 10%
-        else if(stakingPeriod >= 24 seconds && stakingPeriod < 48 seconds){
+        else if(stakingPeriod >= 24 weeks && stakingPeriod < 48 weeks){
             returnPersentage = 10;
         }
         //if staking period is greater than 1 year, ROI is 15%
-        else if(stakingPeriod >= 48 seconds) {
+        else if(stakingPeriod >= 48 weeks) {
             returnPersentage = 15;
         }
 
