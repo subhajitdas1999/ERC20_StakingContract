@@ -1,3 +1,5 @@
+const { BigNumber } = require("ethers");
+
 async function main() {
     const [deployer] = await ethers.getSigners();
   
@@ -7,7 +9,7 @@ async function main() {
   
     const Staking = await ethers.getContractFactory("ERC20StakingContract");
     const Token = await ethers.getContractFactory("MyERC20Token");
-    const initialTokenSupply = 1000000;
+    const initialTokenSupply = BigNumber.from("1000000000000000000000000");
     const token = await Token.deploy("MyToken", "MT", initialTokenSupply);
     const staking = await Staking.deploy(token.address);
 
