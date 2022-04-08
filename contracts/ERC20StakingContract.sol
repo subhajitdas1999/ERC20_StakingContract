@@ -76,8 +76,6 @@ contract ERC20StakingContract {
         uint ROItokenBits  = calculateROI(_stakeId,tokenBits);
         //total tokenBits to transfer the stakeOwner
         uint totalTokenBits = tokenBits + ROItokenBits;
-        //contract should have enough tokens
-        require(tokenContract.balanceOf(address(this)) >= totalTokenBits ,"Contract does not enough Tokens, try after some time");
         //update the staking collection
         staking.tokenBitsAmount = updatedTokenBits;
         //transfer the tokens to the stake owner from this contract address

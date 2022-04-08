@@ -8,7 +8,7 @@ async function main() {
     const Staking = await ethers.getContractFactory("ERC20StakingContract");
     const Token = await ethers.getContractFactory("MyERC20Token");
     const initialTokenSupply = 1000000;
-    const token = await Token.deploy("My Token", "MT", initialTokenSupply);
+    const token = await Token.deploy("MyToken", "MT", initialTokenSupply);
     const staking = await Staking.deploy(token.address);
 
     //send all the tokens to the staking contract. so that the staking contract have have balance on its own
