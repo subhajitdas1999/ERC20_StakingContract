@@ -1,16 +1,21 @@
 # ERC20_StakingContract
 
 where user stakes his ERC20 tokens . 
-after 4 weeks of deposit user gets 5% APR , after 6 months gets 10% APR and after 1 year gets 15% APR
+after 4 weeks of deposit user gets 5% APR , after 6 months gets 10% APR and after 1 year gets 15% APR.
+
+For staking before calling the function "stakeTokens" , you need to approve staking or greater amount for the contract address,
+so that it can transfer the token amount from your account to it's own account.Otherwise it'll revert the transaction.
+
+for stake withdrawal use the function "withdrawStake" with a given stake index and tokenBits Amount.
 
 
 # the contracts is deployed at rinkeby network 
 
-1. staking contract 0xB93c4623587Dd807C3Ea52A44f849849eA9d0869 .
-contract is verified . [etherscan link](https://rinkeby.etherscan.io/address/0xB93c4623587Dd807C3Ea52A44f849849eA9d0869#code)
+1. staking contract 0x3bAE1256663b43e503aee0F01e0Be2F0d93db73F .
+contract is verified . [etherscan link](https://rinkeby.etherscan.io/address/0x3bAE1256663b43e503aee0F01e0Be2F0d93db73F#code)
 
-2. ERC20Token contract 0x64b6a4BF29d7242D552B1D2FD113B68421136E89 .
-contract is verified . [etherscan link](https://rinkeby.etherscan.io/address/0x64b6a4BF29d7242D552B1D2FD113B68421136E89#code)
+2. ERC20Token contract 0x65FB172158b7C09946Be0CF99177108cc2983b67 .
+contract is verified . [etherscan link](https://rinkeby.etherscan.io/address/0x65FB172158b7C09946Be0CF99177108cc2983b67#code)
 
 
 # To Deploy the contracts 
@@ -23,7 +28,7 @@ for rinkeby network
 
 # To run the tests for staking contract
 
-when running tests, change the time period in staking contract's calculateROI function from weeks to seconds (for testing).
+when running tests, change the time period in staking contract's calculateROI function from days to seconds (for testing).
 otherwise last test will fail.
 
 1. run:- npx hardhat test (from root directory)
