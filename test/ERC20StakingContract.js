@@ -12,16 +12,23 @@ describe("ERC20StakingContract Contract", () => {
   let token;
   let staking;
 
-  const initialTokenSupply = 1000000;
+  //initial supplied 1000000 tokens
+  const initialTokenSupply = BigNumber.from("1000000000000000000000000");
+  //owner mint 1000 tokens
+  const ownerMintTokenAmount = BigNumber.from("1000000000000000000000");
 
-  const stakeSomeTokensFromOwnersAccount = async (
+  //owner stake amount 500 tokens
+  const ownerStakeTokenAmount = BigNumber.from("1000000000000000000000").div(
+    BigNumber.from(2)
+  );
+  const mintApproveStakeTokensFromOwnersAccount = async (
     tokenMintAmount,
     tokenStakeAmount
   ) => {
     //mint 1000 token to owner account
     await token.mint(tokenMintAmount);
     //approving staking contract as a operator for 1000 tokens
-    await token.approveWithoutTokenBits(staking.address, tokenMintAmount);
+    await token.approve(staking.address, tokenMintAmount);
 
     //stake 500 tokens
     await staking.stakeTokens(tokenStakeAmount);
@@ -49,40 +56,49 @@ describe("ERC20StakingContract Contract", () => {
 
   it("user cannot stake more token than his account balance", async () => {
     //mint 1000 token to owner account
-    await token.mint(1000);
+    await token.mint(ownerMintTokenAmount);
 
-    //now try to stake 1200 tokens
-    await expect(staking.stakeTokens(1200)).to.be.revertedWith(
-      "Account have less token"
+    //now try to stake 100 tokens more
+    await expect(
+      staking.stakeTokens(ownerMintTokenAmount + 100)
+    ).to.be.revertedWith("Account have less token");
+  });
+
+  it("user have to approve the contract before staking contract", async () => {
+    //mint 1000 token to owner account
+    await token.mint(ownerMintTokenAmount);
+
+    //now try to stake 1000 tokens more
+    await expect(staking.stakeTokens(ownerMintTokenAmount)).to.be.revertedWith(
+      "Allowance is less for this contract"
     );
   });
 
-  it("cannot stake less than 100 tokens", async () => {
+  it("cannot stake less than 100 tokensBits", async () => {
     //mint 1000 token to owner account
-    await token.mint(1000);
+    await token.mint(ownerMintTokenAmount);
+
+    //approve the contract
+    await token.approve(staking.address, ownerMintTokenAmount);
 
     //now try to stake 50 tokens
     await expect(staking.stakeTokens(50)).to.be.revertedWith(
-      "minimum staking balance is 100 tokens"
+      "minimum staking TokenBits is 100"
     );
   });
 
   it("user should able to stake tokens", async () => {
-    const stakingAmount = 500;
-
-    //mint 1000 token to owner account
-    await token.mint(1000);
-    //approving staking contract as a operator for 1000 tokens
-    await token.approveWithoutTokenBits(staking.address, 1000);
-
-    //staking contract balance before any user stake tokens
+    //staking contract balance before anyone stakes
     const stakingContractBalanceBefore = await token.balanceOf(staking.address);
-    //user balance before staking
-    const userBalanceBefore = await token.balanceOf(owner.address);
 
-    //now stake 500 tokens
-    //should emit the staked events
-    await expect(staking.stakeTokens(stakingAmount)).to.emit(staking, "staked");
+    //user balance before staking is same token mint amount
+    const userBalanceBefore = ownerMintTokenAmount;
+
+    //mint tokens approve it for the contract and stake the half amount
+    await mintApproveStakeTokensFromOwnersAccount(
+      ownerMintTokenAmount,
+      ownerStakeTokenAmount
+    );
 
     //staking contract balance after anyone stakes
     const stakingContractBalanceAfter = await token.balanceOf(staking.address);
@@ -102,48 +118,40 @@ describe("ERC20StakingContract Contract", () => {
     expect(stakingContractBalanceDiff).to.equal(userBalanceDiff);
   });
 
-  it("Cannot withdraw stake with invalid staking id", async () => {
-    //mint and stake some tokens
-    const [tokenMintAmount, tokenStakeAmount] = [1000, 500];
-    await stakeSomeTokensFromOwnersAccount(tokenMintAmount, tokenStakeAmount);
+  it("Cannot withdraw stake with invalid staking index", async () => {
+    //mint tokens approve it for the contract and stake the half amount
+    await mintApproveStakeTokensFromOwnersAccount(
+      ownerMintTokenAmount,
+      ownerStakeTokenAmount
+    );
 
-    //now try to withdraw with staking id 0 (invalid Id)
-    await expect(staking.withdrawStake(0, tokenStakeAmount)).to.be.revertedWith(
-      "staking Id is not exists"
+    //now try to withdraw with staking index 1 (as user only staked 1 time so index 1 is invalid (index starts from 0))
+    await expect(staking.withdrawStake(1, ownerStakeTokenAmount)).to.be.revertedWith(
+      "Invalid Index"
     );
   });
 
-  it("only staking owner is allowed withdraw his staking", async () => {
-    //mint and stake some tokens
-    const [tokenMintAmount, tokenStakeAmount] = [1000, 500];
-    await stakeSomeTokensFromOwnersAccount(tokenMintAmount, tokenStakeAmount);
-
-    //as this is the first staking , so the stakedId will be 1 and staking owner is owner account
-    //now try to withdraw this stake with add1 account
-    await expect(
-      staking.connect(addr1).withdrawStake(1, tokenStakeAmount)
-    ).to.be.revertedWith("Only staking owner is allowed to withdraw");
-  });
 
   it("User cannot withdraw more tokens than he staked", async () => {
-    //mint and stake some tokens
-    const [tokenMintAmount, tokenStakeAmount] = [1000, 500];
-    await stakeSomeTokensFromOwnersAccount(tokenMintAmount, tokenStakeAmount);
+    //mint tokens approve it for the contract and stake the half amount
+    await mintApproveStakeTokensFromOwnersAccount(
+      ownerMintTokenAmount,
+      ownerStakeTokenAmount
+    );
 
-    //trying to withdraw 200 extra tokens than staked
+    //trying to withdraw 200 extra tokens than staked . index is 0 for the first staking.
     await expect(
-      staking.withdrawStake(1, tokenStakeAmount + 200)
+      staking.withdrawStake(0, ownerStakeTokenAmount + 200)
     ).to.be.revertedWith("Exceeding tokens amount");
   });
 
   it("user should get his 5% staking reward for the time period of 4 seconds", async () => {
-    //mint and stake some tokens
-    const [tokenMintAmount, tokenStakeAmount] = [1000, 500];
-    await stakeSomeTokensFromOwnersAccount(tokenMintAmount, tokenStakeAmount);
+   //mint tokens approve it for the contract and stake the half amount
+   await mintApproveStakeTokensFromOwnersAccount(
+    ownerMintTokenAmount,
+    ownerStakeTokenAmount
+  );
 
-    //get the staking details
-    const [stakeId, stakingOwner, tokenBitsAmount, timeOfStaking] =
-      await staking.stakings(1);
 
     //wait for 5 seconds , so that we can the 5 % stake . for this test , change the contract code from 4 weeks to 4 seconds
     //function to add delay
@@ -158,28 +166,25 @@ describe("ERC20StakingContract Contract", () => {
     await delay(5000);
 
     //user balance before stake withdrawal
-    const userBalanceBeforeWithdrawal = await token.balanceOf(owner.address); 
-
-  
+    const userBalanceBeforeWithdrawal = await token.balanceOf(owner.address);
 
     //user should get 5% of tokenBitsAmount as a reward after 4 seconds of staking
-    const userStakingRewardAmount = BigNumber.from(tokenBitsAmount)
+    const userStakingRewardAmount = BigNumber.from(ownerStakeTokenAmount)
       .mul(BigNumber.from(5))
       .div(BigNumber.from(100));
-
-    //now withdraw the staking amount with staking Id = 1
-    await staking.withdrawStake(stakeId, tokenStakeAmount);
+  
+    //now withdraw the staking amount with staking index = 0, as this the first staking from owner address
+    await staking.withdrawStake(0, ownerStakeTokenAmount);
 
     //user balance after stake withdrawal
     const userBalanceAfterWithdrawal = await token.balanceOf(owner.address);
 
-    const UserTotalBalanceWithoutReward = BigNumber.from(userBalanceBeforeWithdrawal).add(tokenBitsAmount);
+    const UserTotalBalanceWithoutReward = BigNumber.from(userBalanceBeforeWithdrawal).add(ownerStakeTokenAmount);
+
     //difference between user balance after staking and the amount his account have . that's how we'll get the ROI(4%)
     const diff = BigNumber.from(userBalanceAfterWithdrawal).sub(
       BigNumber.from(UserTotalBalanceWithoutReward)
     );
-
-    
 
     //this diff should be same as user reward for staking 4 seconds
     expect(diff).to.equal(userStakingRewardAmount);
