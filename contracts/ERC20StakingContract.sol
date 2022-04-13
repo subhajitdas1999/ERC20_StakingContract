@@ -13,6 +13,7 @@ contract ERC20StakingContract {
         address stakingOwner;
         uint tokenBitsAmount;
         uint timeOfStaking;
+        bool unStake;
     }
 
     //mapp all the stakings . address => [all the stakings]
@@ -20,7 +21,7 @@ contract ERC20StakingContract {
     //events for staking
     event staked(address indexed stakingOwner,uint tokenAmountBits,uint stakeIndex);
     //events for stake withdraw
-    event withdraw(uint withdrawTokenBits,uint remainingTokenBits,uint stakeIndex);
+    event withdraw(uint TotalTokenBits,uint Rewards ,uint stakeIndex);
 
     constructor(
         IERC20 _tokenContract
@@ -37,7 +38,8 @@ contract ERC20StakingContract {
         Staking memory staking = Staking(
             msg.sender,
             _tokenBitsAmount,
-            block.timestamp
+            block.timestamp,
+            false
         );
 
         //transfer the tokens from staking owner to contract
@@ -51,27 +53,24 @@ contract ERC20StakingContract {
     }
 
     //withdraw stake tokens 
-    function withdrawStake(uint _stakeIndex, uint _tokenBitsAmount) public{
+    function withdrawStake(uint _stakeIndex) public{
         //check the stake index
         require(_stakeIndex < stakings[msg.sender].length,"Invalid Index");
         //get the staking details from collection
         Staking storage staking = stakings[msg.sender][_stakeIndex];
-        //check the balance
-        require(staking.tokenBitsAmount >= _tokenBitsAmount,"Exceeding tokens amount");
-        //update the tokenBits
-        uint updatedTokenBits = staking.tokenBitsAmount - _tokenBitsAmount ;
-        require(updatedTokenBits ==0|| updatedTokenBits >= 100,"withdraw all or remaining staking balance should be greater than 100");
+        require(!staking.unStake,"UnStaked already");
         //calculate the ROI
-        uint ROItokenBits  = calculateROI(_stakeIndex,_tokenBitsAmount);
+        uint tokenReward  = calculateReward(_stakeIndex);
         //total tokenBits to transfer the stakeOwner
-        uint totalTokenBits = _tokenBitsAmount + ROItokenBits;
+        uint totalTokenBits = staking.tokenBitsAmount + tokenReward;
         //update the staking collection
-        staking.tokenBitsAmount = updatedTokenBits;
+        staking.tokenBitsAmount = 0;
+        staking.unStake = true;
         //transfer the tokens to the stake owner from this contract address
         tokenContract.transfer(staking.stakingOwner,totalTokenBits);
 
         //emit the withdraw events
-        emit withdraw(_tokenBitsAmount,staking.tokenBitsAmount,_stakeIndex);
+        emit withdraw(totalTokenBits,tokenReward,_stakeIndex);
 
     }
 
@@ -81,30 +80,27 @@ contract ERC20StakingContract {
     }
 
     //calculate the ROI based on Investment
-    function calculateROI(uint _stakeIndex,uint _tokenBitsAmount) public view returns(uint){
+    function calculateReward(uint _stakeIndex) public view returns(uint){
         Staking memory staking = stakings[msg.sender][_stakeIndex];
+        uint tokenBitsAmount = staking.tokenBitsAmount ;
         uint stakingPeriod = block.timestamp-staking.timeOfStaking;
-        uint returnPersentage;
+        uint returnPercentage;
 
-        //for testing uncomment it
-        // if (stakingPeriod >= 4 seconds){
-        //     returnPersentage = 5;
-        // }
         //if staking period is greater than 1 month(30days) and less than 6 month (~183 days) ROI is 5%        
         if (stakingPeriod >= 30 days && stakingPeriod < 183 days){
-            returnPersentage = 5;
+            returnPercentage = 5;
         }
         //if staking period is greater than 6 month(~183 days) and less than 1 year(365 days) ROI is 10%
         else if(stakingPeriod >= 183 days && stakingPeriod < 365 days){
-            returnPersentage = 10;
+            returnPercentage = 10;
         }
         //if staking period is greater than 1 year, ROI is 15%
         else if(stakingPeriod >= 365 days) {
-            returnPersentage = 15;
+            returnPercentage = 15;
         }
 
-        //erc20 decimal is present,considering it into the calculation 
-        return (_tokenBitsAmount * returnPersentage)/100 ; 
+        //calculate the reward w.r.t the amount user staked
+        return (tokenBitsAmount * returnPercentage)/100; 
     }
 
 }
