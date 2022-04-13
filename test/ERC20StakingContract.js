@@ -126,55 +126,35 @@ describe("ERC20StakingContract Contract", () => {
     );
 
     //now try to withdraw with staking index 1 (as user only staked 1 time so index 1 is invalid (index starts from 0))
-    await expect(staking.withdrawStake(1, ownerStakeTokenAmount)).to.be.revertedWith(
+    await expect(staking.withdrawStake(1)).to.be.revertedWith(
       "Invalid Index"
     );
   });
 
 
-  it("User cannot withdraw more tokens than he staked", async () => {
-    //mint tokens approve it for the contract and stake the half amount
-    await mintApproveStakeTokensFromOwnersAccount(
-      ownerMintTokenAmount,
-      ownerStakeTokenAmount
-    );
-
-    //trying to withdraw 200 extra tokens than staked . index is 0 for the first staking.
-    await expect(
-      staking.withdrawStake(0, ownerStakeTokenAmount + 200)
-    ).to.be.revertedWith("Exceeding tokens amount");
-  });
-
-  it("user should get his 5% staking reward for the time period of 4 seconds", async () => {
+  it("user should get his 5% staking reward for the time period of 2 months", async () => {
    //mint tokens approve it for the contract and stake the half amount
    await mintApproveStakeTokensFromOwnersAccount(
     ownerMintTokenAmount,
     ownerStakeTokenAmount
   );
 
+    //manipulate the block time and mine a block . two months in seconds
+    const twoMonths = (24*60*60)*30*2
 
-    //wait for 5 seconds , so that we can the 5 % stake . for this test , change the contract code from 4 weeks to 4 seconds
-    //function to add delay
-    const delay = (t) => {
-      return new Promise((resolve) => {
-        setTimeout(resolve, t);
-      });
-    };
-
-    //add delay of 5 seconds
-    console.log("added delay of 5 seconds");
-    await delay(5000);
+    await ethers.provider.send('evm_increaseTime', [twoMonths]);
+    await ethers.provider.send('evm_mine');
 
     //user balance before stake withdrawal
     const userBalanceBeforeWithdrawal = await token.balanceOf(owner.address);
 
-    //user should get 5% of tokenBitsAmount as a reward after 4 seconds of staking
+    //user should get 5% of tokenBitsAmount as a reward after 2 months of staking
     const userStakingRewardAmount = BigNumber.from(ownerStakeTokenAmount)
       .mul(BigNumber.from(5))
       .div(BigNumber.from(100));
   
     //now withdraw the staking amount with staking index = 0, as this the first staking from owner address
-    await staking.withdrawStake(0, ownerStakeTokenAmount);
+    await staking.withdrawStake(0);
 
     //user balance after stake withdrawal
     const userBalanceAfterWithdrawal = await token.balanceOf(owner.address);
@@ -186,7 +166,23 @@ describe("ERC20StakingContract Contract", () => {
       BigNumber.from(UserTotalBalanceWithoutReward)
     );
 
-    //this diff should be same as user reward for staking 4 seconds
+    //this diff should be same as user reward for staking 2 months
     expect(diff).to.equal(userStakingRewardAmount);
   });
+
+  it("Cannot withdraw a stake which is already unStaked", async () => {
+    //mint tokens approve it for the contract and stake the half amount
+    await mintApproveStakeTokensFromOwnersAccount(
+     ownerMintTokenAmount,
+     ownerStakeTokenAmount
+   );
+
+   //withdraw the stake for the 1st time
+   await staking.withdrawStake(0);
+
+   //now try to withdraw it again
+   await expect(staking.withdrawStake(0)).to.be.revertedWith(
+    "UnStaked already"
+  );
+    });
 });
