@@ -28,7 +28,6 @@ for rinkeby network
 
 # To run the tests for staking contract
 
-when running tests, change the time period in staking contract's calculateROI function from days to seconds (for testing).
-otherwise last test will fail.
+
 
 1. run:- npx hardhat test (from root directory)
