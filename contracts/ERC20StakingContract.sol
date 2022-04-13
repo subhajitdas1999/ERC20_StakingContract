@@ -80,7 +80,7 @@ contract ERC20StakingContract {
     }
 
     //calculate the ROI based on Investment
-    function calculateReward(uint _stakeIndex) public view returns(uint){
+    function calculateReward(uint _stakeIndex) internal view returns(uint){
         Staking memory staking = stakings[msg.sender][_stakeIndex];
         uint tokenBitsAmount = staking.tokenBitsAmount ;
         uint stakingPeriod = block.timestamp-staking.timeOfStaking;
